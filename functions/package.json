@@ -3,9 +3,10 @@
   "scripts": {
     "lint": "eslint --ext .js,.ts .",
     "build": "tsc",
-    "serve": "npm run build && firebase emulators:start --only functions",
-    "shell": "npm run build && firebase functions:shell",
-    "start": "npm run shell",
+    "serve": "yarn build && firebase emulators:start --only functions",
+    "serve:all": "yarn build && firebase emulators:start",
+    "shell": "yarn build && firebase functions:shell",
+    "start": "yarn shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
@@ -14,6 +15,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@line/bot-sdk": "^7.3.0",
     "axios": "^0.21.1",
     "cheerio": "^1.0.0-rc.9",
     "firebase-admin": "^9.8.0",
