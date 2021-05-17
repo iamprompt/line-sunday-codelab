@@ -1,13 +1,14 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
-import { MessageEvent } from '@line/bot-sdk'
+import { MessageEvent, Profile } from '@line/bot-sdk'
 import { LINE_INSTANCE } from '../../config'
 
 type TextTraslatedDocument = {
   input: string
   timestamp: admin.firestore.Timestamp
   replyToken: string
-  sourceType?: 'user' | 'group' | 'room'
+  sourceType: 'user' | 'group' | 'room'
+  sourceUserId: string
   translated?: {
     th: string
     ja: string
@@ -23,7 +24,8 @@ const saveGroupTextInFireStore = async (e: MessageEvent) => {
       input: e.message.text,
       timestamp: admin.firestore.Timestamp.fromMillis(e.timestamp),
       replyToken: e.replyToken,
-      // sourceType: e.source.type,
+      sourceType: e.source.type,
+      sourceUserId: e.source.userId,
     }
 
     let sourceId = ''
@@ -73,6 +75,34 @@ const handleTranslated = async (
   console.log(previousD)
   console.log(latestD)
 
+  let senderProfile: Profile
+
+  try {
+    switch (latestD.sourceType) {
+      case 'user':
+        senderProfile = await LINE_INSTANCE.getProfile(latestD.sourceUserId)
+        break
+
+      case 'group':
+        senderProfile = await LINE_INSTANCE.getGroupMemberProfile(
+          sourceId,
+          latestD.sourceUserId,
+        )
+        break
+
+      case 'room':
+        senderProfile = await LINE_INSTANCE.getRoomMemberProfile(
+          sourceId,
+          latestD.sourceUserId,
+        )
+        break
+    }
+  } catch (error) {
+    throw new Error(error)
+  }
+
+  // console.log(senderProfile)
+
   const japaneseRegEx =
     /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/
 
@@ -92,6 +122,7 @@ const handleTranslated = async (
         latestD.input.match(japaneseRegEx)
           ? `🇹🇭 ${latestD.translated?.th}`
           : `🇯🇵 ${latestD.translated?.ja}`,
+        senderProfile,
       )
     }
   }
@@ -99,11 +130,16 @@ const handleTranslated = async (
   return
 }
 
-const translatedReply = async (replyToken: string, msg: string) => {
+const translatedReply = async (
+  replyToken: string,
+  msg: string,
+  senderProfile?: Profile,
+) => {
   return await LINE_INSTANCE.replyMessage(replyToken, [
     {
       sender: {
-        name: 'วุ้นแปลภาษา',
+        name: senderProfile?.displayName || 'วุ้นแปลภาษา',
+        iconUrl: senderProfile?.pictureUrl,
       },
       type: 'flex',
       altText: 'มีข้อความมาใหม่!!',

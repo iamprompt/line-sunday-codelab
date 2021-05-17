@@ -9,6 +9,7 @@ import {
   saveGroupTextInFireStore,
   handleTranslated,
 } from './codelabs/02-translation'
+import { LINE_INSTANCE } from './config'
 
 export const helloWorld = functions.https.onRequest((req, res) => {
   functions.logger.info(`It's working!!`, { structuredData: true })
@@ -20,6 +21,22 @@ export const chathook = functions.https.onRequest(async (req, res) => {
   if (req.rawBody) {
     console.log(`Incomming Body`)
     console.log(JSON.stringify(req.body))
+  }
+
+  const { body }: { body: WebhookRequestBody } = req
+  const event = body.events?.[0]
+
+  //* LOG
+  if (event?.type === 'follow' || event?.type === 'unfollow') {
+    try {
+      const profile = await LINE_INSTANCE.getProfile(
+        event.source.userId as string,
+      )
+
+      console.log(profile)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   //* Week 1 : COVID19 Notification LINE Chatbot
