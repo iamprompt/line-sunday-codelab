@@ -4,52 +4,6 @@ import axios from 'axios'
 
 import { LINE_INSTANCE } from '../../config'
 
-const scrapingData = async (): Promise<void> => {
-  const response = await axios.get('https://covid19.ddc.moph.go.th/')
-  const html = response.data
-
-  const $ = cheerio.load(html)
-  const selector = $('div.block-st-all h1')
-  const selectorDate = $('.block-title-page.hidden-md.hidden-lg h2')
-
-  if (selector.length !== 4 && selectorDate.length !== 1) {
-    return
-  }
-
-  let current = ''
-  const currentDate = $(selectorDate).text().split(' : ')[1].trim() || ''
-
-  if (currentDate === '') {
-    return
-  }
-
-  selector.each((index, element) => {
-    if (index === 0) {
-      current = $(element).text()
-    } else {
-      current = current.concat('|', $(element).text())
-    }
-  })
-  // broadcast(current, currentDate)
-
-  const previousStats = await admin.firestore().doc('line/covid19').get()
-  // console.log(previousStats.data())
-
-  if (
-    !previousStats.exists ||
-    previousStats.data()?.report !== current ||
-    previousStats.data()?.updated !== currentDate
-  ) {
-    await admin
-      .firestore()
-      .doc('line/covid19')
-      .set({ report: current, updated: currentDate })
-    broadcast(current, currentDate)
-  }
-
-  return
-}
-
 const broadcast = async (
   currentReport: string,
   ReportedDate: string,
@@ -238,7 +192,50 @@ const broadcast = async (
       },
     },
   ])
-  return
+}
+
+const scrapingData = async (): Promise<void> => {
+  const response = await axios.get('https://covid19.ddc.moph.go.th/')
+  const html = response.data
+
+  const $ = cheerio.load(html)
+  const selector = $('div.block-st-all h1')
+  const selectorDate = $('.block-title-page.hidden-md.hidden-lg h2')
+
+  if (selector.length !== 4 && selectorDate.length !== 1) {
+    return
+  }
+
+  let current = ''
+  const currentDate = $(selectorDate).text().split(' : ')[1].trim() || ''
+
+  if (currentDate === '') {
+    return
+  }
+
+  selector.each((index, element) => {
+    if (index === 0) {
+      current = $(element).text()
+    } else {
+      current = current.concat('|', $(element).text())
+    }
+  })
+  // broadcast(current, currentDate)
+
+  const previousStats = await admin.firestore().doc('line/covid19').get()
+  // console.log(previousStats.data())
+
+  if (
+    !previousStats.exists ||
+    previousStats.data()?.report !== current ||
+    previousStats.data()?.updated !== currentDate
+  ) {
+    await admin
+      .firestore()
+      .doc('line/covid19')
+      .set({ report: current, updated: currentDate })
+    broadcast(current, currentDate)
+  }
 }
 
 export { scrapingData }

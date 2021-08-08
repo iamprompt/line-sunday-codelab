@@ -15,6 +15,37 @@ type TextTraslatedDocument = {
   }
 }
 
+const translatedReply = async (
+  replyToken: string,
+  msg: string,
+  senderProfile?: Profile,
+) => {
+  return await LINE_INSTANCE.replyMessage(replyToken, [
+    {
+      sender: {
+        name: senderProfile?.displayName || 'วุ้นแปลภาษา',
+        iconUrl: senderProfile?.pictureUrl,
+      },
+      type: 'flex',
+      altText: 'มีข้อความมาใหม่!!',
+      contents: {
+        type: 'bubble',
+        body: {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'text',
+              text: msg,
+              wrap: true,
+            },
+          ],
+        },
+      },
+    },
+  ])
+}
+
 const saveGroupTextInFireStore = async (e: MessageEvent) => {
   console.group(`-- Save Group Text in Firestore --`)
   console.log(JSON.stringify(e))
@@ -48,10 +79,10 @@ const saveGroupTextInFireStore = async (e: MessageEvent) => {
       .collection('translations')
       .doc(sourceId)
       .set(infoSaved, { merge: true })
-      .then(function () {
+      .then(() => {
         console.log('Text is saved to Firestore successfully!!')
       })
-      .catch(function (error) {
+      .catch((error) => {
         console.error('Error Writing Document: ', error)
       })
   } else {
@@ -104,7 +135,7 @@ const handleTranslated = async (
   // console.log(senderProfile)
 
   const japaneseRegEx =
-    /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/
+    /[\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFF9F\u4E00-\u9FAF\u3400-\u4DBF]/
 
   if (previousD && latestD) {
     if (
@@ -126,39 +157,6 @@ const handleTranslated = async (
       )
     }
   }
-
-  return
-}
-
-const translatedReply = async (
-  replyToken: string,
-  msg: string,
-  senderProfile?: Profile,
-) => {
-  return await LINE_INSTANCE.replyMessage(replyToken, [
-    {
-      sender: {
-        name: senderProfile?.displayName || 'วุ้นแปลภาษา',
-        iconUrl: senderProfile?.pictureUrl,
-      },
-      type: 'flex',
-      altText: 'มีข้อความมาใหม่!!',
-      contents: {
-        type: 'bubble',
-        body: {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'text',
-              text: msg,
-              wrap: true,
-            },
-          ],
-        },
-      },
-    },
-  ])
 }
 
 export { saveGroupTextInFireStore, handleTranslated }

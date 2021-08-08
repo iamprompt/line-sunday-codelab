@@ -1,0 +1,6 @@
+{
+  "extends": ["@antfu/eslint-config-ts", "prettier"],
+  "rules": {
+    "no-console": "off"
+  }
+}
